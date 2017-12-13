@@ -1,6 +1,7 @@
 /.vscode/*
 /scripts/*
 /test/*
+!/lib/*
 
 .editorconfig
 .gitattributes
