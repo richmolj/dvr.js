@@ -28,7 +28,7 @@ export function resetDVR() {
 
 export function setTest(title: string) {
   return function(nm: any) {
-    fs.writeFileSync('.dvr.series', title)
+    fs.writeFileSync('.dvr.series', title, { flag: 'w' })
   }
 }
 

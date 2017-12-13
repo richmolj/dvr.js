@@ -53,11 +53,15 @@ export class DVR {
   }
 
   get recordings() {
-    return JSON.parse(fs.readFileSync(this.recordingsFile, 'utf8'));
+    if (fs.existsSync(this.recordingsFile)) {
+      return JSON.parse(fs.readFileSync(this.recordingsFile, 'utf8'));
+    } else {
+      return []
+    }
   }
 
   set recordings(val: Array<Recording>) {
-    fs.writeFileSync(this.recordingsFile, JSON.stringify(val), 'utf8')
+    fs.writeFileSync(this.recordingsFile, JSON.stringify(val), { flag: 'w' })
   }
 
   findRecording(input: RequestInfo, init: RequestInit) {
