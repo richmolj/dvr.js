@@ -1,10 +1,13 @@
 {
   "name": "dvr",
-  "version": "0.0.1",
+  "version": "0.0.3",
   "description": "Record/Playback requests/responses from js integration tests",
   "main": "dist/dvr.js",
   "module": "lib/dvr.js",
-  "author": { "name": "Lee Richmond", "email": "richmolj@gmail.com" },
+  "author": {
+    "name": "Lee Richmond",
+    "email": "richmolj@gmail.com"
+  },
   "license": "MIT",
   "files": [
     "src",
