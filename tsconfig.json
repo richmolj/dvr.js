@@ -1,5 +1,7 @@
 {
   "compilerOptions": {
+    "target": "es2015",
+    "module": "commonjs",
     "declaration": true,
     "declarationDir": "lib/",
     "allowJs": false,

@@ -1,83 +1,117 @@
-# Rollup, Typescript, & Mocha Starter Project
+DVR
+====
 
-<!-- [![Build Status](https://travis-ci.org/wadetandy/rollup-typescript-mocha-template.svg?branch=master)](https://travis-ci.org/wadetandy/rollup-typescript-mocha-template)
-[![CircleCI](https://circleci.com/gh/wadetandy/rollup-typescript-mocha-template.svg?style=svg)](https://circleci.com/gh/wadetandy/rollup-typescript-mocha-template)
-[![Coverage Status](https://coveralls.io/repos/github/wadetandy/rollup-typescript-mocha-template/badge.svg?branch=master)](https://coveralls.io/github/wadetandy/rollup-typescript-mocha-template?branch=master)
-[![codecov](https://codecov.io/gh/wadetandy/rollup-typescript-mocha-template/branch/master/graph/badge.svg)](https://codecov.io/gh/wadetandy/rollup-typescript-mocha-template)
-[![npm](https://img.shields.io/npm/l/express.svg?style=flat-square)](https://github.com/wadetandy/rollup-typescript-mocha-template/blob/master/LICENSE.md) -->
+Record your javascript application's HTTP interactions and replay them during future test runs for fast, deterministic, accurate tests. Inspired by [VCR](https://github.com/vcr/vcr).
 
-This package contains a compact and lightweight `TypeScript 2.0` boilerplate that export a single file.
+### Usage
 
-Estimated bundle time: `0.3 ms`. (*Depends on your computer.*)
+```ts
+new DVR({
+  recordingsFile: 'recordings.json'
+})
 
-## Features
+dvr.broadcastRecording = function(recording) {
+  // if needed, custom code to emit can go here
+  dvr.saveRecording("series title", recording)
+}
+```
 
-- [x] Statically typed build system for working with [Typescript](https://www.typescriptlang.org/) 2.0 Pre
-- [x] Consistent code style with [TSLint](https://palantir.github.io/tslint/).
-- [x] Coverage report with [Istanbul](https://github.com/gotwarlost/istanbul)
-- [x] Dead code elimination
-- [x] VSCode integration
-- [x] Optional [JSDOM](https://github.com/tmpvar/jsdom)
-- [x] [Rollup](http://rollupjs.org/) for bundling
-- [x] [Bublé](https://gitlab.com/Rich-Harris/buble) as the ES2015 compiler
-- [x] [Sinon](http://sinonjs.org/) for test doubles
-- [x] [Mocha](https://mochajs.org/) & [Chai](http://chaijs.com/) de facto standard
-- [x] JSX
-- [x] Environment variabels
-- [x] Easy debugging
+The `series` acts as a namespace to avoid conflicts between separate tests.
 
-## npm Scripts
+Pass `LIVE=true` to make live calls and record the responses. Otherwise, DVR will play back previous recordings, throwing an error if a given recording is not found.
 
-- `build` - creates a development and production bundle
-- `build:dev`  - creates a development bundle
-- `build:prod` - creates a production bundle
-- `coverage` - shows the coverage report
-- `clean` - remove the dist, coverage and build folders
-- `test` - run all unit tests in the node.js environment
-- `test:jsdom` - run all unit tests in the node.js environment with jsdom
-- `lint` - validates all source and test files
-- `lint-src` - validates all source files
-- `lint-tests` - validates all test files
-- `release` - build the library, push to NPM and Github
-- `watch:tests` - run all unit tests and watch files for changes
-- `watch:build` - watch your TypeScript files and trigger recompilation on changes
-- `update:dependencies` - update npm packages
+To make this easier, DVR comes with helpers to facilitating integration with [Nightmare](https://github.com/segmentio/nightmare), a browser automation library.
 
-## Usage
-You can simply use this project as a drop-in replacement for any TypeScript projects if you need something fast, and lightweight. Just replace the `./src` and `./test` folder and it should work right out of the box.
+### Nightmare Integration
 
-Both `Travis CI` and `Circle CI` are supported.
+To start, we'll need a custom [preload script](https://github.com/segmentio/nightmare#custom-preload-script) to register DVR before we navigate to a page. Then, we'll register DVR with the nightmare instance so we can save recordings:
 
-## Coverage reports
+```ts
+import {
+  writePreloadFile,
+  registerRecordingHandler
+} from 'dvr/lib/nightmare-integration'
 
-The coverage reports are generated with `Istanbul`, and delivered to `coveralls.io` and `codecov` by `Travis CI`.
+// Write a custom preload file
+let preloadPath = 'tmp/custom-preload.js'
+writePreloadFile(require, preloadPath)
 
-Istanbul generate a 100% correct coverage report. See the source and test files and do a comparison.
+// Instantiate nightmare with the custom preload file
+let nightmare = new Nightmare({
+  webPreferences: {
+    preload: path.resolve(preloadPath)
+  }
+})
 
-## FAQ
+// Register DVR with the nightmare instance
+registerDVR(dvr, nightmare)
+```
 
-#### How to use this boilerplate with Karma?
+Finally, we need to set the current test title on the nightmare instance. This allows to run all recordings in a given "series" - so separate tests can make the same request and not run into conflicts.
 
-NPM install the `Karma` package and type `karma init` on the command line. The test files are pre-transpilled by `TypeScript` and located here `build/test/specs/**/*.js`.
-Install a `Karma` preprocessor, and the NPM packages you may need.
+Example of setting the current test title in [mocha](https://mochajs.org/):
 
-#### Is JSX supported?
+```
+beforeEach(function() {
+  nightmare.currentTestTitle = this.currentTest.fullTitle()
+})
 
-Yes. Both `TSX` and `JSX`. By default `Bublé` are configured to be used with `React`. You may change this inside the `rollup.config.js` file.
+afterEach(function() {
+  delete nightmare.currentTestTitle
+})
+```
 
-#### Why is everything so strict?
+Optionally, you may want to use the `resetDVR` helper. This resets the number of "original requests" (requests made by loading the page). Useful if if you have any logic around counting requests (such as, "wait until the next request finishes"). To use this, call the helper after `goto`:
 
-What do you mean? The `TypeScript` compiler have it's rules to follow, as well as `TSLint`. Everytime you bundle, run a watch task or
-run the unit tests, things get validated. You can't compile the source code or run unit tests if there are errors in your code.
+```ts
+nightmare
+  .goto('http://example.com')
+  .use(resetDVR())
+```
 
-#### When should I consider using this boilerplate?
+DVR is now integrated with nightmare - we can record and playback HTTP interations. Run with `LIVE=true` to make live calls.
 
-You may consider this is if you need a lightweight, fast boilerplate that export a single file.
+### Full Example
 
-#### What's the browser compatibility?
+Everything you need to run with Nightmare and Mocha:
 
-As a rule of thumb, `TypeScript` works best in `IE9` and above.
+```ts
+import {
+  writePreloadFile,
+  registerRecordingHandler,
+  resetDVR
+} from 'dvr/lib/nightmare-integration'
 
-#### Do I need to customize this boilerplate?
+let dvr = new DVR({ recordingsFile: 'recordings.json' })
 
-Nope. You only have to change the name on the boilerplate in the `package.json`.
+const buildNightmare = function() {
+  let preloadPath = 'tmp/custom-preload.js'
+  writePreloadFile(require, preloadPath)
+
+  return new Nightmare({
+    webPreferences: {
+      preload: path.resolve(preloadPath)
+    }
+  })
+}
+
+let nightmare = buildNightmare()
+registerDVR(dvr, nightmare)
+
+describe('some test', function() {
+  beforeEach(function() {
+    nightmare.currentTestTitle = this.currentTest.fullTitle()
+  })
+
+  afterEach(function() {
+    delete nightmare.currentTestTitle
+  })
+
+  it('works', function() {
+    nightmare
+      .goto('http://localhost:8080/things')
+      .use(resetDVR())
+      // now test as normal
+  })
+})
+```
