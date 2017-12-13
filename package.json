@@ -1,6 +1,6 @@
 {
   "name": "dvr",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Record/Playback requests/responses from js integration tests",
   "main": "dist/dvr.js",
   "module": "lib/dvr.js",
