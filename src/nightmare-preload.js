@@ -1,4 +1,4 @@
-let { DVR } = require('dvr')
+let { DVR } = require('dvr-js')
 let fs = require('fs')
 
 const dvrConfig = require('../package.json').dvrConfig

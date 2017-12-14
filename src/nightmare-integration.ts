@@ -3,7 +3,7 @@ import * as fs from 'fs'
 // resolver is the calling context's require
 export function writePreloadFile(resolver: any, path: string) {
   let preloadCode = fs.readFileSync(resolver.resolve("nightmare/lib/preload.js"), 'utf8')
-  let dvrPreloadCode = fs.readFileSync(resolver.resolve("dvr/lib/nightmare-preload.js"), 'utf8')
+  let dvrPreloadCode = fs.readFileSync(resolver.resolve("dvr-js/lib/nightmare-preload.js"), 'utf8')
   let customCode = `${preloadCode}\n\n${dvrPreloadCode}`
   fs.writeFileSync(path, customCode)
 }
